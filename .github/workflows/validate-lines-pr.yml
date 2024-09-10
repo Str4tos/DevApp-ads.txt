@@ -1,0 +1,33 @@
+name: Validate lines in Pull Request
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  detect-and-process-files:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Validate lines
+        id: validate-lines
+        run: |
+          git fetch origin master
+          python validate_files.py
+
+      - name: Check for changes and commit
+        id: commit-changes
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git diff --exit-code || (git add . && git commit -m "Auto-format code and apply changes" && git push)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This is automatically provided by GitHub Actions
